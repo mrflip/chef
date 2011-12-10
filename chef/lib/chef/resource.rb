@@ -489,7 +489,7 @@ F
     end
 
     def self.json_create(o)
-      resource = self.new(o["instance_vars"]["@name"])
+      resource = self.new(o["instance_vars"]["name"])
       o["instance_vars"].each do |k,v|
         resource.instance_variable_set("@#{k}".to_sym, v)
       end

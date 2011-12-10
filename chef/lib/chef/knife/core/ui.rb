@@ -98,7 +98,7 @@ class Chef
       # determined by the value of `config[:color]`. When output is not to a
       # terminal, colored output is never used
       def color?
-        Chef::Config[:color] && stdout.tty? && (RUBY_PLATFORM !~ /mswin|mingw32|windows/)
+        Chef::Config[:color] && stdout.tty? && !Chef::Platform.windows?
       end
 
       def ask(*args, &block)
@@ -146,7 +146,7 @@ class Chef
       def edit_data(data, parse_output=true)
         output = Chef::JSONCompat.to_json_pretty(data)
 
-        if (!config[:no_editor])
+        if (!config[:disable_editing])
           filename = "knife-edit-"
           0.upto(20) { filename += rand(9).to_s }
           filename << ".js"

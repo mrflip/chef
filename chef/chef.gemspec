@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.add_dependency "mixlib-cli", ">= 1.1.0"
   s.add_dependency "mixlib-log", ">= 1.3.0"
   s.add_dependency "mixlib-authentication", ">= 1.1.0"
+  s.add_dependency "mixlib-shellout", "~> 1.0.0.rc"
   s.add_dependency "ohai", ">= 0.6.0"
 
   s.add_dependency "rest-client", ">= 1.0.4", "< 1.7.0"
@@ -27,7 +28,7 @@ Gem::Specification.new do |s|
   s.add_dependency "net-ssh-multi", "~> 1.1.0"
   %w{erubis moneta highline uuidtools}.each { |gem| s.add_dependency gem }
 
-  %w(dep_selector rspec-core rspec-expectations rspec-mocks).each { |gem| s.add_development_dependency gem }
+  %w(dep_selector rspec-core rspec-expectations rspec-mocks rspec_junit_formatter).each { |gem| s.add_development_dependency gem }
 
   s.bindir       = "bin"
   s.executables  = %w( chef-client chef-solo knife shef )

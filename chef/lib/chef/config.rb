@@ -48,12 +48,11 @@ class Chef
     end
 
     def self.platform_specific_path(path)
-      if RbConfig::CONFIG['host_os'] =~ Chef::Config[:windows_os_regex]
-        # turns /etc/chef/client.rb into C:\chef\client.rb
+      if RUBY_PLATFORM =~ /mswin|mingw|windows/
+        # turns /etc/chef/client.rb into C:/chef/client.rb
         path = File.join(ENV['SYSTEMDRIVE'], path.split('/')[2..-1])
         # ensure all forward slashes are backslashes
-        # has a conditional because ALT_SEPARATOR is not defined on all platforms
-        path.gsub!(File::SEPARATOR, File::ALT_SEPARATOR) unless File::ALT_SEPARATOR == nil
+        path.gsub!(File::SEPARATOR, (File::ALT_SEPARATOR || '\\'))
       end
       path
     end
@@ -259,10 +258,15 @@ class Chef
 
     # Those lists of regular expressions define what chef considers a
     # valid user and group name
-    user_valid_regex [ /^([-a-zA-Z0-9_.]+)$/, /^\d+$/ ]
-    group_valid_regex [ /^([-a-zA-Z0-9_.\\ ]+)$/, /^\d+$/ ]
+    if RUBY_PLATFORM =~ /mswin|mingw|windows/
+      user_valid_regex [ /^[^"\/\\\[\]\:;|=,+*?<>]+$/ ]
+      group_valid_regex [ /^[^"\/\\\[\]\:;|=,+*?<>]+$/ ]
+    else
+      user_valid_regex [ /^([-a-zA-Z0-9_.]+)$/, /^\d+$/ ]
+      group_valid_regex [ /^([-a-zA-Z0-9_.\\ ]+)$/, /^\d+$/ ]
+    end
 
-    # Regex to determine if running on a windows system
-    windows_os_regex /mswin|mingw|windows/
+    # returns a platform specific path to the user home dir
+    user_home (ENV['HOME'] || ENV['SYSTEMDRIVE'] + ENV['HOMEPATH'] || ENV['USERPROFILE'])
   end
 end

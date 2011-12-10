@@ -33,14 +33,16 @@ describe Chef::Knife::Configure do
 
   it "asks the user for the clientname they want for the new client if -i is specified" do
     @knife.config[:initial] = true
+    Etc.stub!(:getlogin).and_return("a-new-user")
     @knife.ask_user_for_config
-    @out.string.should match(Regexp.escape("Please enter a clientname for the new client: [#{Etc.getlogin}]"))
+    @out.string.should match(Regexp.escape("Please enter a clientname for the new client: [a-new-user]"))
     @knife.new_client_name.should == Etc.getlogin
   end
 
   it "asks the user for the existing API username or clientname if -i is not specified" do
+    Etc.stub!(:getlogin).and_return("a-new-user")
     @knife.ask_user_for_config
-    @out.string.should match(Regexp.escape("Please enter an existing username or clientname for the API: [#{Etc.getlogin}]"))
+    @out.string.should match(Regexp.escape("Please enter an existing username or clientname for the API: [a-new-user]"))
     @knife.new_client_name.should == Etc.getlogin
   end
 
@@ -89,6 +91,7 @@ describe Chef::Knife::Configure do
   end
 
   it "writes the new data to a config file" do
+    File.stub!(:expand_path).with("/home/you/.chef/knife.rb").and_return("/home/you/.chef/knife.rb")
     FileUtils.should_receive(:mkdir_p).with("/home/you/.chef")
     config_file = StringIO.new
     ::File.should_receive(:open).with("/home/you/.chef/knife.rb", "w").and_yield config_file
@@ -103,19 +106,22 @@ describe Chef::Knife::Configure do
   end
 
   it "creates a new client when given the --initial option" do
+    File.stub!(:expand_path).with("/home/you/.chef/knife.rb").and_return("/home/you/.chef/knife.rb")
     Chef::Config[:node_name]  = "webmonkey.example.com"
     client_command = Chef::Knife::ClientCreate.new
     client_command.should_receive(:run)
+
+    Etc.stub!(:getlogin).and_return("a-new-user")
 
     Chef::Knife::ClientCreate.stub!(:new).and_return(client_command)
     FileUtils.should_receive(:mkdir_p).with("/home/you/.chef")
     ::File.should_receive(:open).with("/home/you/.chef/knife.rb", "w")
     @knife.config[:initial] = true
     @knife.run
-    client_command.name_args.should == Array(Etc.getlogin)
+    client_command.name_args.should == Array("a-new-user")
     client_command.config[:admin].should be_true
-    client_command.config[:file].should == "/home/you/.chef/#{Etc.getlogin}.pem"
+    client_command.config[:file].should == "/home/you/.chef/a-new-user.pem"
     client_command.config[:yes].should be_true
-    client_command.config[:no_editor].should be_true
+    client_command.config[:disable_editing].should be_true
   end
 end

@@ -20,6 +20,7 @@ require 'socket'
 require 'chef/config'
 require 'chef/exceptions'
 require 'chef/log'
+require 'chef/platform'
 require 'mixlib/cli'
 require 'tmpdir'
 require 'rbconfig'
@@ -41,7 +42,7 @@ class Chef::Application
       Chef::Application.fatal!("SIGINT received, stopping", 2)
     end
 
-    unless Chef::Config.host_os =~ Chef::Config[:windows_os_regex]
+    unless Chef::Platform.windows?
       trap("QUIT") do
         Chef::Log.info("SIGQUIT received, call stack:\n  " + caller.join("\n  "))
       end

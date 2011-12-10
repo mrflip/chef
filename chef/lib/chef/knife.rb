@@ -243,9 +243,9 @@ class Chef
         @@chef_config_dir = false
         full_path = Dir.pwd.split(File::SEPARATOR)
         (full_path.length - 1).downto(0) do |i|
-          canidate_directory = File.join(full_path[0..i] + [".chef" ])
-          if File.exist?(canidate_directory) && File.directory?(canidate_directory)
-            @@chef_config_dir = canidate_directory
+          candidate_directory = File.join(full_path[0..i] + [".chef" ])
+          if File.exist?(candidate_directory) && File.directory?(candidate_directory)
+            @@chef_config_dir = candidate_directory
             break
           end
         end
@@ -306,11 +306,11 @@ class Chef
         read_config_file(config[:config_file])
       else
         # ...but do log a message if no config was found.
-        Chef::Config[:color] = config[:color] && !config[:no_color]
+        Chef::Config[:color] = config[:color]
         ui.warn("No knife configuration file found")
       end
 
-      Chef::Config[:color] = config[:color] && !config[:no_color]
+      Chef::Config[:color] = config[:color]
 
       case config[:verbosity]
       when 0

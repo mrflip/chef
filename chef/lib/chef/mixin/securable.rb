@@ -28,6 +28,8 @@ class Chef
         )
       end
 
+      alias :user :owner
+
       def group(arg=nil)
         set_or_return(
           :group,
@@ -60,8 +62,6 @@ class Chef
       # TODO should this be separated into different files?
       if RUBY_PLATFORM =~ /mswin|mingw|windows/
 
-        VALID_RIGHTS = [:read, :write, :full_control, :deny]
-
         # supports params like this:
         #
         #   rights :read, ["Administrators","Everyone"]
@@ -84,7 +84,7 @@ class Chef
             args_hash = args.length >= 3 ? args[2] : nil
             raise ArgumentError.new("wrong number of arguments (#{args.length} for 3)") if args.length >= 4
 
-            rights = nil
+            rights = self.instance_variable_get("@#{name.to_s}".to_sym)
             unless permission == nil
               input = {
                 :permission => permission.to_sym,
@@ -92,7 +92,7 @@ class Chef
               }
               input.merge!(args_hash) if args_hash != nil
 
-              validations = {:permission => { :required => true, :equal_to => VALID_RIGHTS },
+              validations = {:permission => { :required => true, :equal_to => [:read, :write, :full_control, :deny] },
                              :principal => { :required => true, :kind_of => [String, Array] },
                              :applies_to_children => { :equal_to => [ true, false, :containers_only, :objects_only ]},
                              :applies_to_self => { :kind_of => [ TrueClass, FalseClass ] },
@@ -102,10 +102,10 @@ class Chef
 
               if (!input.has_key?(:applies_to_children) || input[:applies_to_children] == false)
                 if input[:applies_to_self] == false
-                  raise "'rights' attribute must specify either :applies_to_children or :applies_to_self."
+                  raise ArgumentError, "'rights' attribute must specify either :applies_to_children or :applies_to_self."
                 end
                 if input[:one_level_deep] == true
-                  raise "'rights' attribute specified :one_level_deep without specifying :applies_to_children."
+                  raise ArgumentError, "'rights' attribute specified :one_level_deep without specifying :applies_to_children."
                 end
               end
               rights ||= []

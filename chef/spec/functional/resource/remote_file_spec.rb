@@ -1,6 +1,6 @@
 #
 # Author:: Seth Chisamore (<schisamo@opscode.com>)
-# Copyright:: Copyright 2011 Opscode, Inc.
+# Copyright:: Copyright (c) 2011 Opscode, Inc.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,16 +16,21 @@
 # limitations under the License.
 #
 
-require 'chef/win32/api'
+require File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "spec_helper"))
 
-class Chef
-  module Win32
-    module API
-      module Service
+describe Chef::Resource::RemoteFile do
+  include_context Chef::Resource::File
 
-        extend Chef::Win32::API
+  let(:file_base) { "remote_file_spec" }
+  let(:source) { 'http://opscode-chef-spec-data.s3.amazonaws.com/integration/remote_file/nyan_cat.png' }
+  let(:expected_content) { IO.read(File.join(CHEF_SPEC_DATA, 'remote_file', 'nyan_cat.png')) }
 
-      end
-    end
+  let!(:resource) do
+    resource = Chef::Resource::RemoteFile.new(path)
+    resource.source(source)
+    resource
   end
+
+  it_behaves_like "a file resource"
+  it_behaves_like "a securable resource"
 end

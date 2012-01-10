@@ -110,14 +110,14 @@ describe Chef::Config do
 
    describe "class method: plaform_specific_path" do
     it "should return given path on non-windows systems" do
-      with_constants :RUBY_PLATFORM => 'x86_64-darwin11.2.0' do
+      platform_mock :unix do
         path = "/etc/chef/cookbooks"
         Chef::Config.platform_specific_path(path).should == "/etc/chef/cookbooks"
       end
     end
 
     it "should return a windows path on windows systems" do
-      with_constants :RUBY_PLATFORM => 'i386-mingw32' do
+      platform_mock :windows do
         path = "/etc/chef/cookbooks"
         ENV.stub!(:[]).with('SYSTEMDRIVE').and_return('C:')
         # match on a regex that looks for the base path with an optional
@@ -129,6 +129,16 @@ describe Chef::Config do
   end
 
   describe "default values" do
+    before(:each) do
+      # reload Chef::Config to ensure defaults are truely active
+      load File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "lib", "chef", "config.rb"))
+    end
+
+    after(:each) do
+      # reload spec helper to re-set any spec specific Chef::Config values
+      load File.expand_path(File.join(File.dirname(__FILE__), "..", "spec_helper.rb"))
+    end
+
     it "Chef::Config[:file_backup_path] defaults to /var/chef/backup" do
       backup_path = if windows?
         "#{ENV['SYSTEMDRIVE']}\\chef\\backup"

@@ -1,6 +1,6 @@
 #
 # Author:: Seth Chisamore (<schisamo@opscode.com>)
-# Copyright:: Copyright 2011 Opscode, Inc.
+# Copyright:: Copyright (c) 2011 Opscode, Inc.
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,13 +16,18 @@
 # limitations under the License.
 #
 
-require 'chef/win32/api/service'
+require File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "spec_helper"))
 
-class Chef
-  module Win32
-    class Service
-      include Chef::Win32::API::Service
+describe Chef::Resource::Directory do
+  include_context Chef::Resource::Directory
 
-    end
+  let(:directory_base) { "directory_spec" }
+
+  let!(:resource) do
+    Chef::Resource::Directory.new(path)
   end
+
+  it_behaves_like "a directory resource"
+  it_behaves_like "a securable resource"
+
 end

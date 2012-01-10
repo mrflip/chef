@@ -41,10 +41,14 @@ require 'chef/util/file_edit'
 
 Dir[File.join(File.dirname(__FILE__), 'lib', '**', '*.rb')].sort.each { |lib| require lib }
 
+CHEF_SPEC_DATA = File.expand_path(File.dirname(__FILE__) + "/data/")
+CHEF_SPEC_BACKUP_PATH = File.join(Dir.tmpdir, 'test-backup-path')
+
 Chef::Config[:log_level] = :fatal
 Chef::Config[:cache_type] = "Memory"
 Chef::Config[:cache_options] = { }
 Chef::Config[:persistent_queue] = false
+Chef::Config[:file_backup_path] = CHEF_SPEC_BACKUP_PATH
 
 Chef::Log.level(Chef::Config.log_level)
 Chef::Config.solo(false)
@@ -59,7 +63,6 @@ def windows?
   end
 end
 
-CHEF_SPEC_DATA = File.expand_path(File.dirname(__FILE__) + "/data/")
 DEV_NULL = windows? ? 'NUL' : '/dev/null'
 
 def redefine_argv(value)
@@ -77,7 +80,11 @@ def with_argv(*argv)
   end
 end
 
+# Mock global constants!
+
 # Sets $VERBOSE for the duration of the block and back to its original value afterwards.
+#
+# https://github.com/rails/rails/blob/master/activesupport/lib/active_support/core_ext/kernel/reporting.rb#L3-30
 def with_warnings(flag)
   old_verbose, $VERBOSE = $VERBOSE, flag
   yield
@@ -85,6 +92,7 @@ ensure
   $VERBOSE = old_verbose
 end
 
+# http://digitaldumptruck.jotabout.com/?p=551
 def with_constants(constants, &block)
   saved_constants = {}
   constants.each do |constant, val|
@@ -99,8 +107,33 @@ def with_constants(constants, &block)
     end
   end
 end
+####################
 
-# include custom matchers
+# makes Chef think it's running on a certain platform..useful for unit testing
+# platform-specific functionality.
+#
+# If a block is given yields to the block with +RUBY_PLATFORM+ set to
+# 'i386-mingw32' (windows) or 'x86_64-darwin11.2.0' (unix).  Usueful for
+# testing code that mixes in platform specific modules like +Chef::Mixin::Securable+
+# or +Chef::FileAccessControl+
+def platform_mock(platform = :unix, &block)
+  Chef::Platform.stub!(:windows?).and_return(platform == :windows ? true : false)
+  ENV['SYSTEMDRIVE'] = (platform == :windows ? 'C:' : nil)
+  if block_given?
+    with_constants :RUBY_PLATFORM => (platform == :windows ? 'i386-mingw32' : 'x86_64-darwin11.2.0') do
+      yield
+    end
+  end
+end
+
+def sha256_checksum(path)
+  Digest::SHA256.hexdigest(File.read(path))
+end
+
+# load shared contexts & examples
+Dir[File.join(File.dirname(__FILE__), 'support', 'shared','**', '*.rb')].sort.each { |lib| require lib }
+
+# load custom matchers
 Dir[File.join(File.dirname(__FILE__), 'support', 'matchers', '*.rb')].sort.each { |lib| require lib }
 RSpec.configure do |config|
   config.include(Matchers)

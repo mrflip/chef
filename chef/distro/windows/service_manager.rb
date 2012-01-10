@@ -65,14 +65,12 @@ class Chef
         :short        => "-s SECONDS",
         :long         => "--splay SECONDS",
         :description  => "The splay time for running at intervals, in seconds",
-        :default      => 10*60, # 10 minutes at most
         :proc         => lambda { |s| s.to_i }
 
       option :interval,
         :short        => "-i SECONDS",
         :long         => "--interval SECONDS",
         :description  => "Set the number of seconds to wait between chef-client runs",
-        :default      => 30*60, # 30 minutes"
         :proc         => lambda { |s| s.to_i }
 
       option :help,
@@ -89,29 +87,36 @@ class Chef
 
         case config[:action]
         when 'install'
-
-          # Quote the full path to deal with possible spaces in the path name.
           ruby = File.join(RbConfig::CONFIG['bindir'], 'ruby')
-          path = ' "' + File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'lib', 'chef', 'application', 'windows_service.rb')) + '"'
-          # ensure all forward slashes are backslashes
-          options = " -c #{config[:config_file]} -L #{config[:log_location]} -i #{config[:interval]} -s #{config[:splay]}"
-          cmd = (ruby + path + options).gsub(File::SEPARATOR, File::ALT_SEPARATOR)
+          path = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'lib', 'chef', 'application', 'windows_service.rb'))
+
+          opts = ""
+          opts << " -c #{config[:config_file]}" if config[:config_file]
+          opts << " -L #{config[:log_location]}" if config[:log_location]
+          opts << " -i #{config[:interval]}" if config[:interval]
+          opts << " -s #{config[:splay]}" if config[:splay]
+
+          # Quote the full paths to deal with possible spaces in the path name.
+          # Also ensure all forward slashes are backslashes
+          cmd = "\"#{ruby}\" \"#{path}\" #{opts}".gsub(File::SEPARATOR, File::ALT_SEPARATOR)
 
           Win32::Service.new(
                       :service_name     => config[:name],
                       :display_name     => config[:display_name],
                       :description      => config[:description],
                       :binary_path_name => cmd)
-
+          puts "Service '#{config[:name]}' has successfully been 'installed'."
         when 'start'
           # TODO: allow override of startup parameters here?
-          take_action('start', RUNNING)
+          take_action('start', RUNNING) if Win32::Service.exists?(config[:name])
         when 'stop'
-          take_action('stop', STOPPED)
+          take_action('stop', STOPPED) if Win32::Service.exists?(config[:name])
         when 'uninstall', 'delete'
           take_action('stop', STOPPED)
-          Win32::Service.delete(config[:name])
-          puts "Service #{config[:name]} deleted"
+          if Win32::Service.exists?(config[:name])
+            Win32::Service.delete(config[:name])
+            puts "Service #{config[:name]} deleted"
+          end
         when 'pause'
           take_action('pause', PAUSED)
         when 'resume'
@@ -127,12 +132,16 @@ class Chef
       PAUSED = "paused"
 
       def take_action(action=nil, desired_state=nil)
-        if current_state != desired_state
-          Win32::Service.send(action, config[:name])
-          wait_for_state(desired_state)
-          puts "Service #{config[:name]} is now #{current_state}"
+        if Win32::Service.exists?(config[:name])
+          if current_state != desired_state
+            Win32::Service.send(action, config[:name])
+            wait_for_state(desired_state)
+            puts "Service '#{config[:name]}' is now '#{current_state}'."
+          else
+            puts "Service '#{config[:name]}' is already '#{desired_state}'."
+          end
         else
-          puts "Already #{desired_state}"
+          puts "Cannot '#{action}' service '#{config[:name]}', service does not exist."
         end
       end
 

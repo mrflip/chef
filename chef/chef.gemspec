@@ -24,11 +24,11 @@ Gem::Specification.new do |s|
   s.add_dependency "bunny", ">= 0.6.0"
   s.add_dependency "json", ">= 1.4.4", "<= 1.6.1"
   s.add_dependency "treetop", "~> 1.4.9"
-  s.add_dependency "net-ssh", "~> 2.1.3"
+  s.add_dependency "net-ssh", "~> 2.2.2"
   s.add_dependency "net-ssh-multi", "~> 1.1.0"
   %w{erubis moneta highline uuidtools}.each { |gem| s.add_dependency gem }
 
-  %w(rspec-core rspec-expectations rspec-mocks rspec_junit_formatter).each { |gem| s.add_development_dependency gem }
+  %w(rdoc sdoc ronn rake rspec-core rspec-expectations rspec-mocks rspec_junit_formatter).each { |gem| s.add_development_dependency gem }
 
   s.bindir       = "bin"
   s.executables  = %w( chef-client chef-solo knife shef )
